@@ -1,0 +1,9 @@
+{
+  "name": "mail-backup",
+  "version-string": "0.1.0",
+    "dependencies": [
+        "mailio",
+        "boost-system",
+        "boost-date-time"
+    ]
+}
