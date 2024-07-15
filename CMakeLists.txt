@@ -10,15 +10,7 @@ foreach(configuration_type IN ITEMS Debug Release)
     endforeach()
 endforeach()
 
-find_package(mailio CONFIG REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system date_time)
 find_package(CURL REQUIRED)
 
 add_executable(mail-backup main.cpp)
-target_link_libraries(mail-backup PRIVATE mailio Boost::system Boost::date_time)
-
-add_executable(test main2.cpp)
-target_link_libraries(test PRIVATE mailio Boost::system Boost::date_time)
-
-add_executable(curlc curl.cpp)
-target_link_libraries(curlc PRIVATE CURL::libcurl)
+target_link_libraries(mail-backup PRIVATE CURL::libcurl)

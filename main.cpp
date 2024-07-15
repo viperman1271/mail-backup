@@ -1,57 +1,96 @@
-#include <mailio/message.hpp>
-#include <mailio/imap.hpp>
+/***************************************************************************
+ *                                  _   _ ____  _
+ *  Project                     ___| | | |  _ \| |
+ *                             / __| | | | |_) | |
+ *                            | (__| |_| |  _ <| |___
+ *                             \___|\___/|_| \_\_____|
+ *
+ * Copyright (C) Daniel Stenberg, <daniel@haxx.se>, et al.
+ *
+ * This software is licensed as described in the file COPYING, which
+ * you should have received as part of this distribution. The terms
+ * are also available at https://curl.se/docs/copyright.html.
+ *
+ * You may opt to use, copy, modify, merge, publish, distribute and/or sell
+ * copies of the Software, and permit persons to whom the Software is
+ * furnished to do so, under the terms of the COPYING file.
+ *
+ * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
+ * KIND, either express or implied.
+ *
+ * SPDX-License-Identifier: curl
+ *
+ ***************************************************************************/
+ 
+/* <DESC>
+ * Retrieve IMAP emails
+ * </DESC>
+ */
+ 
 #include <iostream>
-#include <fstream>
+#include <stdio.h>
+#include <curl/curl.h>
+ 
+/* This is a simple example showing how to fetch mail using libcurl's IMAP
+ * capabilities.
+ *
+ * Note that this example requires libcurl 7.30.0 or above.
+ */
 
-void fetchEmails(const std::string& server, const std::string& username, const std::string& password) 
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
-    try 
-    {
-        mailio::imaps conn(server, 993);
+    printf("WriteCallback\r\n");
 
-	mailio::dialog_ssl::ssl_options_t options;
-        options.verify_mode = boost::asio::ssl::verify_none;
-	conn.ssl_options(options);
-
-        std::cout << "Authenticating" << std::endl;
-	conn.authenticate(username, password, mailio::imaps::auth_method_t::LOGIN);
-	mailio::message msg;
-
-        std::cout << "Gathering mailbox information" << std::endl;
-        mailio::imaps::mailbox_stat_t stat = conn.select("INBOX");
-        const int mail_count = stat.messages_no;
-
-	for (int i = 1; i <= mail_count; ++i) 
-	{
-            conn.fetch(i, msg);
-            std::string filename = "email_" + std::to_string(i) + ".eml";
-	    //std::ofstream outFile(filename);
-            //outFile << msg;
-	    //outFile.close();
-        }
-    } 
-    catch (const mailio::imap_error& e) 
-    {
-        std::cerr << "IMAP error: " << e.what() << std::endl;
-    } 
-    catch (const mailio::dialog_error& e) 
-    {
-        std::cerr << "Dialog error: " << e.what() << std::endl;
-    }
-    catch (const boost::system::system_error& e)
-    {
-        std::cerr << "Boost error: " << e.what() << std::endl;
-    }
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
 }
 
-int main()
+int main(void)
 {
-    //const std::string server = "imap.your-email-provider.com"; 
-    const std::string server = "";
-    const std::string username = "";
-    const std::string password = "";
+  CURL *curl;
+  CURLcode res = CURLE_OK;
+ 
+  curl = curl_easy_init();
+  if(curl) {
+    /* Set username and password */
+    curl_easy_setopt(curl, CURLOPT_USERNAME, "");
+    curl_easy_setopt(curl, CURLOPT_PASSWORD, "");
+ 
+    //curl_easy_setopt(curl, CURLOPT_URL, "imaps://imap.gmail.com/INBOX/;UID=2955");
+    curl_easy_setopt(curl, CURLOPT_URL, "imaps://imap.gmail.com/INBOX/;MAILINDEX=242;SECTION=TEXT");
+    //curl_easy_setopt(curl, CURLOPT_URL, "imaps://imap.gmail.com/INBOX/");
 
-    fetchEmails(server, username, password);
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "EXAMINE INBOX");
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "SEARCH NEW");
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "SEARCH ALL");
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "FETCH 1:242 (BODY[HEADER.FIELDS (Subject)])");
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "FETCH 2 RFC822");
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "fetch 2 RFC822");
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "STATUS INBOX (UIDNEXT MESSAGES)");
 
-    return 0;
+    //curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "FETCH 242 ALL");
+
+    std::string readBuffer;
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+    printf("curl_easy_setopt set\r\n");
+ 
+    /* Perform the fetch */
+    res = curl_easy_perform(curl);
+
+    printf("curl_easy_perform\r\n");
+ 
+    /* Check for errors */
+    if(res != CURLE_OK)
+      fprintf(stderr, "curl_easy_perform() failed: %s\n",
+              curl_easy_strerror(res));
+
+    std::cout << readBuffer << std::endl;
+ 
+    /* Always cleanup */
+    curl_easy_cleanup(curl);
+  }
+ 
+  return (int)res;
 }
