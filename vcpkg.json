@@ -4,6 +4,7 @@
     "dependencies": [
         "mailio",
         "boost-system",
-        "boost-date-time"
+        "boost-date-time",
+        "curl"
     ]
 }

@@ -1,5 +1,5 @@
-#include <mailio/message.hpp> 
-#include <mailio/imap.hpp> 
+#include <mailio/message.hpp>
+#include <mailio/imap.hpp>
 #include <iostream>
 #include <fstream>
 
@@ -8,6 +8,11 @@ void fetchEmails(const std::string& server, const std::string& username, const s
     try 
     {
         mailio::imaps conn(server, 993);
+
+	mailio::dialog_ssl::ssl_options_t options;
+        options.verify_mode = boost::asio::ssl::verify_none;
+	conn.ssl_options(options);
+
         std::cout << "Authenticating" << std::endl;
 	conn.authenticate(username, password, mailio::imaps::auth_method_t::LOGIN);
 	mailio::message msg;
@@ -33,14 +38,18 @@ void fetchEmails(const std::string& server, const std::string& username, const s
     {
         std::cerr << "Dialog error: " << e.what() << std::endl;
     }
+    catch (const boost::system::system_error& e)
+    {
+        std::cerr << "Boost error: " << e.what() << std::endl;
+    }
 }
 
 int main()
 {
     //const std::string server = "imap.your-email-provider.com"; 
-    const std::string server = "imap-mail.outlook.com";
-    const std::string username = "your-email@example.com";
-    const std::string password = "your-password";
+    const std::string server = "";
+    const std::string username = "";
+    const std::string password = "";
 
     fetchEmails(server, username, password);
 
