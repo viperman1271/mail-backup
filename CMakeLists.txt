@@ -12,5 +12,6 @@ endforeach()
 
 find_package(CURL REQUIRED)
 
-add_executable(mail-backup main.cpp)
+add_executable(mail-backup main.cpp imap.cpp)
+target_include_directories(mail-backup PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(mail-backup PRIVATE CURL::libcurl)
